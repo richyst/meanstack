@@ -10,11 +10,16 @@ export class MessageService {
 
     constructor(private http: Http){}
     addMessage(message: Message) {
-        this.messages.push(message);
+        
         const body = JSON.stringify(message);
         const headers = new Headers({'Content-Type': 'application/json'})
         return this.http.post('http://localhost:3000/message', body, {headers: headers})
-            .map((res: Response) => res.json())
+            .map((res: Response) => {
+                const result = res.json();
+                const message = new Message(result.obj.content, 'Ricardo', result.obj._id,null);
+                this.messages.push(message);
+                return message;
+            })
             .catch((error:Response)=> Observable.throw(error.json()));
     }
 
@@ -24,7 +29,7 @@ export class MessageService {
                 const messages = res.json().obj;
                 let transformedMessages: Message[] = [];
                 for (let message of messages) {
-                    transformedMessages.push(new Message(message.content,'Test', message.id, null));
+                    transformedMessages.push(new Message(message.content,'Test', message._id, null));
                 }
                 this.messages = transformedMessages;
                 return transformedMessages;
@@ -37,9 +42,16 @@ export class MessageService {
     }
 
     updateMessage(message: Message) {
-
+        const body = JSON.stringify(message);
+        const headers = new Headers({ 'Content-Type': 'application/json' })
+        return this.http.patch('http://localhost:3000/message/' + message.messageId, body, { headers: headers })
+            .map((res: Response) => res.json())
+            .catch((error: Response) => Observable.throw(error.json()));
     }
     deleteMessage(message:Message) {
         this.messages.splice(this.messages.indexOf(message), 1);
+        return this.http.delete('http://localhost:3000/message/' + message.messageId)
+            .map((res: Response) => res.json())
+            .catch((error: Response) => Observable.throw(error.json()));
     }
 }
